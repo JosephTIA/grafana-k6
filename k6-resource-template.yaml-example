@@ -9,7 +9,7 @@ spec:
     configMap:
       name: 'k6-test'
       files:
-        - file: 'test-script.js'
-        - file: 'base-test.js'
-        - file: 'soak-test.js'
-        - file: 'spike-test.js' 
+        - file: 'filename'
+        - file: 'filename'
+        - file: 'filename'
+        - file: 'filename' 
