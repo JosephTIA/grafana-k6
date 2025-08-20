@@ -10,66 +10,98 @@ const BASE_URL = 'https://api.rizwn.com/api/v1/datafeed';
 const engineResponseTime = new Trend(`${TARGET_ENGINE}_response_time`);
 const engineErrorRate = new Rate(`${TARGET_ENGINE}_error_rate`);
 
-// Focused test configuration for deep engine analysis
+// Focused test configuration for deep engine analysis / Rapid strikes
 export const options = {
     stages: [
-        // Gradual ramp-up for detailed observation
-        { duration: '1m', target: 2 },
-        { duration: '2m', target: 5 },
-        { duration: '3m', target: 10 },
-        { duration: '5m', target: 20 },
-        { duration: '3m', target: 35 },
-        { duration: '5m', target: 50 },  // Peak load
-        { duration: '2m', target: 20 },  // Step down
-        { duration: '2m', target: 0 },   // Cool down
+        // Baseline load establishment
+        { duration: '2m', target: 10 },     // Normal operating load
+        { duration: '3m', target: 10 },     // Stable baseline
+        
+        // Spike pattern 1: Moderate spike
+        { duration: '30s', target: 50 },    // Quick ramp to 5x load
+        { duration: '1m', target: 50 },     // Hold spike
+        { duration: '30s', target: 10 },    // Quick recovery
+        { duration: '2m', target: 10 },     // Recovery observation
+        
+        // Spike pattern 2: Severe spike
+        { duration: '15s', target: 100 },   // Extreme spike (10x)
+        { duration: '45s', target: 100 },   // Brief hold
+        { duration: '30s', target: 10 },    // Rapid recovery
+        { duration: '3m', target: 10 },     // Extended recovery monitoring
+        
+        // Spike pattern 3: Double spike (stress recovery)
+        { duration: '20s', target: 75 },    // First spike
+        { duration: '40s', target: 75 },    // Hold
+        { duration: '20s', target: 25 },    // Partial recovery
+        { duration: '20s', target: 80 },    // Second spike while recovering
+        { duration: '1m', target: 80 },     // Hold second spike
+        { duration: '2m', target: 10 },     // Final recovery
+        
+        // Cool down
+        { duration: '1m', target: 0 },      // Shutdown
     ],
     
     thresholds: {
         [`${TARGET_ENGINE}_response_time`]: [
-            'p(50)<150',   // Aggressive thresholds for comparison
-            'p(95)<500',
-            'p(99)<1000'
+            'p(50)<300',   // More lenient during spikes
+            'p(95)<1500',  // Allow for spike degradation
+            'p(99)<3000'   // High tolerance for extreme conditions
         ],
-        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.01'], // Very low error tolerance
-        'http_req_duration': ['p(95)<800'],
+        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.05'], // Higher error tolerance during spikes
+        'http_req_duration': ['p(95)<2000'],
+        
+        // Spike-specific thresholds
+        'http_req_duration{scenario:baseline}': ['p(95)<500'],  // Maintain baseline performance
+        'http_req_duration{scenario:spike}': ['p(95)<2000'],    // Spike tolerance
+        'http_req_failed{scenario:spike}': ['rate<0.10'],       // Allow higher spike failures
     },
-
-    ext: {
-        loadimpact: {
-            distribution: {
-                'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 100 },
-            },
-        },
-    },
-    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
+    
+    //Geograpghic distribution for load (k6 Cloud)
+    // ext: {
+    //     loadimpact: {
+    //         distribution: {
+    //             'amazon:ap:singapore': { loadZone: 'amazon:ap:singapore', percent: 40 },
+    //         },
+    //     },
+    // },
+    
+    summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
     noVUConnectionReuse: true,
-    discardResponseBodies: false,
-    systemTags: ['status', 'method', 'url', 'name', 'group', 'check', 'error']
+    discardResponseBodies: false,    // Reduce memory during high load
+    systemTags: ['status', 'method', 'url', 'name', 'group', 'check', 'error', 'scenario'],
+    
+    // Spike test specific settings
+    batchPerHost: 20,              // Higher batch size for spike efficiency
+    batch: 50,                     // Increased batch processing
+    rps: 1000,                     // Allow high RPS during spikes
 };
 
 // Comprehensive search scenarios
 const searchScenarios = [
     // High-probability matches
-    { term: 'test', weight: 0.2 },
-    { term: 'data', weight: 0.15 },
-    { term: 'user', weight: 0.15 },
+    { term: 'bag', weight: 0.2 },
+    { term: 'shirt', weight: 0.15 },
+    { term: 'socks', weight: 0.15 },
     
     // Moderate matches
-    { term: 'product search', weight: 0.1 },
-    { term: 'api endpoint', weight: 0.1 },
+    { term: 'pickleball', weight: 0.1 },
+    { term: 'perfume', weight: 0.1 },
     
     // Low/no matches
-    { term: 'nonexistentterm123', weight: 0.1 },
-    { term: 'zyxwvutsr', weight: 0.05 },
+    { term: 'santesanete', weight: 0.1 },
+    { term: 'wistina', weight: 0.05 },
     
     // Edge cases
     { term: '', weight: 0.05 },
     { term: ' ', weight: 0.02 },
-    { term: 'very long search term that might cause performance issues in some database engines', weight: 0.03 },
+    { term: 'big fluffy plushy kids animal easy to clean graduation valentines gift', weight: 0.03 },
+    { term: 'こんにちは', weight: 0.1 },
+    { term: 'வணக்கம்', weight: 0.05 },
+    { term: '咖啡', weight: 0.02},
     
     // Special characters
     { term: '@#$%', weight: 0.02 },
-    { term: 'search with spaces', weight: 0.03 },
+    { term: ' search with spaces', weight: 0.03 },
 ];
 
 function selectWeightedSearch() {
@@ -95,6 +127,7 @@ export default function () {
     // Request tags for filtering
     const tags = {
         engine: TARGET_ENGINE,
+        search_term: scenario.term,
         search_length: searchTerm.length.toString()
     };
     

@@ -45,4 +45,8 @@ coverage/
 *.rej
 
 # Report related files
+*.html
 *.yaml
+
+# Claude
+.claude

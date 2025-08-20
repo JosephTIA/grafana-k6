@@ -3,17 +3,18 @@ import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
 // Configure which engine to test via environment variable
-const TARGET_ENGINE = __ENV.ENGINE || 'mysql' || 'meilisearch' || 'duckdb';
-const BASE_URL = 'https://api.rizwn.com/api/v1/datafeed';
+const TARGET_ENGINE = __ENV.ENGINE; // 'mysql' || 'meilisearch' || 'duckdb';
+const BASE_URL = __ENV.BASE_URL;
 
 // Custom metrics for detailed tracking
 const engineResponseTime = new Trend(`${TARGET_ENGINE}_response_time`);
 const engineErrorRate = new Rate(`${TARGET_ENGINE}_error_rate`);
 
 // Focused test configuration for deep engine analysis
+// Primarily focused as a capacity/stress test
 export const options = {
     stages: [
-        // Gradual ramp-up for detailed observation
+        // Gradual ramp-up for detailed observation / Pyramid pattern
         { duration: '1m', target: 2 },
         { duration: '2m', target: 5 },
         { duration: '3m', target: 10 },
@@ -34,13 +35,14 @@ export const options = {
         'http_req_duration': ['p(95)<800'],
     },
 
-    ext: {
-        loadimpact: {
-            distribution: {
-                'amazon:us:ashburn': { loadZone: 'amazon:us:ashburn', percent: 100 },
-            },
-        },
-    },
+    //Geograpghic distribution for load (k6 Cloud)
+    // ext: {
+    //     loadimpact: {
+    //         distribution: {
+    //             'amazon:ap:singapore': { loadZone: 'amazon:ap:singapore', percent: 40 },
+    //         },
+    //     },
+    // },
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
     noVUConnectionReuse: true,
     discardResponseBodies: false,
@@ -50,13 +52,13 @@ export const options = {
 // Comprehensive search scenarios
 const searchScenarios = [
     // High-probability matches
-    { term: 'test', weight: 0.2 },
-    { term: 'data', weight: 0.15 },
-    { term: 'user', weight: 0.15 },
+    { term: 'mug', weight: 0.2 },
+    { term: 'paper', weight: 0.15 },
+    { term: 'mas', weight: 0.15 },
     
     // Moderate matches
-    { term: 'product search', weight: 0.1 },
-    { term: 'api endpoint', weight: 0.1 },
+    { term: 'phone case', weight: 0.1 },
+    { term: 'keyboard', weight: 0.1 },
     
     // Low/no matches
     { term: 'nonexistentterm123', weight: 0.1 },
@@ -65,11 +67,14 @@ const searchScenarios = [
     // Edge cases
     { term: '', weight: 0.05 },
     { term: ' ', weight: 0.02 },
-    { term: 'very long search term that might cause performance issues in some database engines', weight: 0.03 },
+    { term: 'big fluffy plushy kids animal easy to clean graduation valentines gift', weight: 0.03 },
+    { term: 'こんにちは', weight: 0.1 },
+    { term: 'வணக்கம்', weight: 0.05 },
+    { term: '咖啡', weight: 0.02},
     
     // Special characters
     { term: '@#$%', weight: 0.02 },
-    { term: 'search with spaces', weight: 0.03 },
+    { term: ' search with spaces', weight: 0.03 },
 ];
 
 function selectWeightedSearch() {
@@ -95,6 +100,7 @@ export default function () {
     // Request tags for filtering
     const tags = {
         engine: TARGET_ENGINE,
+        search_term: scenario.term,
         search_length: searchTerm.length.toString()
     };
     
