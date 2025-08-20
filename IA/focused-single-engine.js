@@ -16,22 +16,13 @@ export const options = {
         // Gradual ramp-up for detailed observation
         { duration: '1m', target: 2 },
         { duration: '2m', target: 5 },
-        { duration: '1m', target: 10 }, // Peak load 
-        { duration: '1m', target: 5 }, // Step down 
-        { duration: '1m', target: 2 }, // Cool down
-        { duration: '1m', target: 0 }   
+        { duration: '3m', target: 10 },
+        { duration: '5m', target: 20 },
+        { duration: '3m', target: 35 },
+        { duration: '5m', target: 50 },  // Peak load
+        { duration: '2m', target: 20 },  // Step down
+        { duration: '2m', target: 0 },   // Cool down
     ],
-    // stages: [
-    //     // Gradual ramp-up for detailed observation
-    //     { duration: '1m', target: 2 },
-    //     { duration: '2m', target: 5 },
-    //     { duration: '3m', target: 10 },
-    //     { duration: '5m', target: 20 },
-    //     { duration: '3m', target: 35 },
-    //     { duration: '5m', target: 50 },  // Peak load
-    //     { duration: '2m', target: 20 },  // Step down
-    //     { duration: '2m', target: 0 },   // Cool down
-    // ],
     
     thresholds: {
         [`${TARGET_ENGINE}_response_time`]: [
