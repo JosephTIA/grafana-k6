@@ -50,3 +50,7 @@ coverage/
 
 # Claude
 .claude
+
+#In the works files
+webapp-draft.js
+k6-cloud-webapp.sh

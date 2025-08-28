@@ -44,7 +44,7 @@ cp env-template.example .env
 3. Configure your environment variables:
 ```bash
 # .env
-BASE_URL=https://api.rizwn.com/api/v1/datafeed
+BASE_URL=endpoint_url_here
 K6_CLOUD_TOKEN=your_k6_cloud_token_here
 ENGINE=meilisearch  # Options: mysql, meilisearch, duckdb
 K6_WEB_DASHBOARD=true

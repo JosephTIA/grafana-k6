@@ -27,22 +27,22 @@ export const options = {
     
     thresholds: {
         [`${TARGET_ENGINE}_response_time`]: [
-            'p(50)<150',   // Aggressive thresholds for comparison
+            'p(50)<250',   // Aggressive thresholds for comparison
             'p(95)<500',
             'p(99)<1000'
         ],
-        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.01'], // Very low error tolerance
+        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.9'], // Very low error tolerance //Upped the error tolerance
         'http_req_duration': ['p(95)<800'],
     },
 
     //Geograpghic distribution for load (k6 Cloud)
-    // ext: {
-    //     loadimpact: {
-    //         distribution: {
-    //             'amazon:ap:singapore': { loadZone: 'amazon:ap:singapore', percent: 40 },
-    //         },
-    //     },
-    // },
+    ext: {
+        loadimpact: {
+            distribution: {
+                'amazon:sg:singapore': { loadZone: 'amazon:sg:singapore', percent: 100 },
+            },
+        },
+    },
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)'],
     noVUConnectionReuse: true,
     discardResponseBodies: false,

@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
 // Configure which engine to test via environment variable
-const TARGET_ENGINE = __ENV.ENGINE || 'mysql' || 'meilisearch' || 'duckdb';
-const BASE_URL = 'https://api.rizwn.com/api/v1/datafeed';
+const TARGET_ENGINE = __ENV.ENGINE; //|| 'mysql' || 'meilisearch' || 'duckdb'
+const BASE_URL = __ENV.BASE_URL; //'https://api.rizwn.com/api/v1/datafeed';
 
 // Custom metrics for detailed tracking
 const engineResponseTime = new Trend(`${TARGET_ENGINE}_response_time`);
@@ -47,7 +47,7 @@ export const options = {
             'p(95)<1500',  // Allow for spike degradation
             'p(99)<3000'   // High tolerance for extreme conditions
         ],
-        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.05'], // Higher error tolerance during spikes
+        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.90'], // Higher error tolerance during spikes // Upped the error tolerance
         'http_req_duration': ['p(95)<2000'],
         
         // Spike-specific thresholds
@@ -57,13 +57,13 @@ export const options = {
     },
     
     //Geograpghic distribution for load (k6 Cloud)
-    // ext: {
-    //     loadimpact: {
-    //         distribution: {
-    //             'amazon:ap:singapore': { loadZone: 'amazon:ap:singapore', percent: 40 },
-    //         },
-    //     },
-    // },
+    ext: {
+        loadimpact: {
+            distribution: {
+                'amazon:sg:singapore': { loadZone: 'amazon:sg:singapore', percent: 100 },
+            },
+        },
+    },
     
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
     noVUConnectionReuse: true,

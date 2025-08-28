@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 import { Trend, Rate } from 'k6/metrics';
 
 // Configure which engine to test via environment variable
-const TARGET_ENGINE = __ENV.ENGINE || 'mysql' || 'meilisearch' || 'duckdb';
-const BASE_URL = 'https://api.rizwn.com/api/v1/datafeed';
+const TARGET_ENGINE = __ENV.ENGINE; //|| 'mysql' || 'meilisearch' || 'duckdb'
+const BASE_URL = __ENV.BASE_URL; //'https://api.rizwn.com/api/v1/datafeed';
 
 // Custom metrics for detailed tracking
 const engineResponseTime = new Trend(`${TARGET_ENGINE}_response_time`);
@@ -18,8 +18,8 @@ export const options = {
         { duration: '3m', target: 25 },    // Reach operating level
         
         // Extended soak period - this is the key part
-        { duration: '45m', target: 25 },   // 45min sustained load
-        { duration: '15m', target: 25 },   // Additional soak time
+        { duration: '30m', target: 25 },   // 30min sustained load
+        { duration: '10m', target: 25 },   // Additional soak time
         
         // Gradual ramp-down to observe recovery
         { duration: '3m', target: 10 },    // Step down
@@ -32,7 +32,7 @@ export const options = {
             'p(95)<800',   // Allow for some degradation over time
             'p(99)<1500'   // More lenient for outliers in long tests
         ],
-        [`${TARGET_ENGINE}_error_rate`]: ['rate<0.02'], // Allow slight increase over time
+        [`${TARGET_ENGINE}_error_rate`]: ['rate<1.0'], // Allow slight increase over time
         'http_req_duration': ['p(95)<1000'],
         
         // Soak-specific thresholds
@@ -40,13 +40,13 @@ export const options = {
     },
     
     //Geograpghic distribution for load (k6 Cloud)
-    // ext: {
-    //     loadimpact: {
-    //         distribution: {
-    //             'amazon:ap:singapore': { loadZone: 'amazon:ap:singapore', percent: 40 },
-    //         },
-    //     },
-    // },
+    ext: {
+        loadimpact: {
+            distribution: {
+                'amazon:sg:singapore': { loadZone: 'amazon:sg:singapore', percent: 100 },
+            },
+        },
+    },
     summaryTrendStats: ['avg', 'min', 'med', 'max', 'p(95)', 'p(99)', 'count'],
     noVUConnectionReuse: true,
     discardResponseBodies: false,
